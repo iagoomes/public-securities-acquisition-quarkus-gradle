@@ -14,6 +14,7 @@ tags:
 paths:
   /api/v1/public-securities:
     post:
+      operationId: createPublicSecuritiesAcquisition
       tags:
         - Public Securities
       summary: Create a new public securities acquisition record
@@ -37,6 +38,7 @@ paths:
 
   /api/v1/customers/{customerId}/public-securities:
     get:
+      operationId: getCustomerPublicSecurities
       tags:
         - Public Securities
       summary: Retrieve public securities acquisition records for a specific customer
@@ -46,8 +48,9 @@ paths:
           required: true
           schema:
             type: string
-            format: cpf
-          description: CPF of the customer
+            pattern: '^\d{11}$'
+          description: CPF of the customer (11 digits)
+          example: "12345678901"
       responses:
         '200':
           description: List of public securities acquisition records for the customer
@@ -66,24 +69,37 @@ components:
   schemas:
     PublicSecuritiesAcquisitionRequest:
         type: object
+        required:
+          - isin_code
+          - quantity
+          - unit_price
+          - buyer_cpf
         properties:
           isin_code:
             type: string
-            description: International Securities Identification Number
+            pattern: '^[A-Z]{2}[A-Z0-9]{9}[0-9]$'
+            description: International Securities Identification Number (12 characters)
+            example: "BRSTNEACNOR6"
           issuer_name:
             type: string
+            minLength: 1
+            maxLength: 255
             description: Name of the issuer
+            example: "Tesouro Nacional"
           quantity:
             type: integer
+            minimum: 1
             description: Quantity of securities to acquire
+            example: 10
           unit_price:
             type: number
-            format: BigDecimal
-            description: Unit price of the security
+            description: Unit price of the security in BRL (Brazilian Real)
+            example: 1234.56
           buyer_cpf:
             type: string
-            format: cpf
-            description: CPF of the buyer
+            pattern: '^\d{11}$'
+            description: CPF of the buyer (11 digits, no formatting)
+            example: "12345678901"
     PublicSecuritiesAcquisitionResponse:
         type: object
         properties:
@@ -91,32 +107,39 @@ components:
             type: string
             format: uuid
             description: Unique identifier of the acquisition record
+            example: "123e4567-e89b-12d3-a456-426614174000"
           isin_code:
             type: string
             description: International Securities Identification Number
+            example: "BRSTNEACNOR6"
           issuer_name:
             type: string
             description: Name of the issuer
+            example: "Tesouro Nacional"
           acquisition_date:
             type: string
             format: date
             description: Date of acquisition
+            example: "2025-11-06"
           quantity:
             type: integer
             description: Quantity of securities acquired
+            example: 10
           unit_price:
             type: number
-            format: BigDecimal
-            description: Unit price of the security
+            description: Unit price of the security in BRL
+            example: 1234.56
           total_price:
             type: number
-            format: BigDecimal
-            description: Total price of the acquisition
+            description: Total price of the acquisition in BRL
+            example: 12345.60
           buyer_cpf:
             type: string
-            format: cpf
-            description: CPF of the buyer
+            pattern: '^\d{11}$'
+            description: CPF of the buyer (11 digits)
+            example: "12345678901"
           created_at:
             type: string
             format: date-time
             description: Timestamp of when the record was created
+            example: "2025-11-06T10:30:00Z"

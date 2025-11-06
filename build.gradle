@@ -12,12 +12,13 @@ repositories {
 dependencies {
     implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
     implementation 'io.quarkus:quarkus-rest'
-    implementation 'io.quarkus:quarkus-messaging-rabbitmq'
     implementation 'io.quarkus:quarkus-rest-jackson'
+    implementation 'io.quarkus:quarkus-messaging-rabbitmq'
     implementation 'io.quarkus:quarkus-hibernate-orm-panache'
     implementation 'io.quarkus:quarkus-smallrye-health'
     implementation 'io.quarkus:quarkus-jdbc-postgresql'
     implementation 'io.quarkus:quarkus-arc'
+    implementation 'io.quarkus:quarkus-micrometer'
 
     // OpenAPI / Swagger UI
     implementation 'io.quarkus:quarkus-smallrye-openapi'
@@ -55,7 +56,7 @@ compileTestJava {
 }
 
 // OpenAPI Generator configuration
-def generatedSourcesDir = "${layout.buildDirectory.get()}/generated"
+def generatedSourcesDir = "${layout.buildDirectory.get()}/generated/openapi"
 
 openApiGenerate {
     generatorName = "jaxrs-spec"
@@ -63,14 +64,20 @@ openApiGenerate {
     outputDir = generatedSourcesDir
     apiPackage = "br.com.iagoomes.api"
     modelPackage = "br.com.iagoomes.model"
+    invokerPackage = "br.com.iagoomes.invoker"
 
     configOptions = [
+            library: "quarkus",
             interfaceOnly: "true",
             returnResponse: "true",
             useTags: "true",
             dateLibrary: "java8",
             useJakartaEe: "true",
-            generatePom: "false"
+            generatePom: "false",
+            sourceFolder: "src/main/java",  // Define o caminho correto do source
+            useSwaggerAnnotations: "false",  // Disable deprecated Swagger 2.0 annotations
+            prependFormOrBodyParameters: "true",
+            generateMicroprofileOpenAPIAnnotations: "true",
     ]
 
     additionalProperties = [
@@ -88,7 +95,16 @@ sourceSets {
     }
 }
 
-// Garante que a geração ocorra antes da compilação
+// Garante que a geração ocorra antes de processar os sources
 tasks.named('compileJava') {
     dependsOn tasks.named('openApiGenerate')
+}
+
+tasks.named('processResources') {
+    dependsOn tasks.named('openApiGenerate')
+}
+
+// Configuração do MapStruct para trabalhar com classes geradas
+tasks.withType(JavaCompile).configureEach {
+    options.annotationProcessorPath = configurations.annotationProcessor
 }
