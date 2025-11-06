@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'io.quarkus'
+    id 'org.openapi.generator' version '7.10.0'
 }
 
 repositories {
@@ -17,6 +18,17 @@ dependencies {
     implementation 'io.quarkus:quarkus-smallrye-health'
     implementation 'io.quarkus:quarkus-jdbc-postgresql'
     implementation 'io.quarkus:quarkus-arc'
+
+    // OpenAPI / Swagger UI
+    implementation 'io.quarkus:quarkus-smallrye-openapi'
+    implementation 'io.swagger.core.v3:swagger-annotations:2.2.26'
+    implementation 'org.openapitools:jackson-databind-nullable:0.2.6'
+    implementation 'jakarta.validation:jakarta.validation-api:3.1.0'
+
+    // MapStruct
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+    implementation 'org.mapstruct:mapstruct:1.6.3'
+
     testImplementation 'io.quarkus:quarkus-junit5'
 }
 
@@ -32,6 +44,7 @@ test {
     systemProperty "java.util.logging.manager", "org.jboss.logmanager.LogManager"
     jvmArgs "--add-opens", "java.base/java.lang=ALL-UNNAMED"
 }
+
 compileJava {
     options.encoding = 'UTF-8'
     options.compilerArgs << '-parameters'
@@ -39,4 +52,43 @@ compileJava {
 
 compileTestJava {
     options.encoding = 'UTF-8'
+}
+
+// OpenAPI Generator configuration
+def generatedSourcesDir = "${layout.buildDirectory.get()}/generated"
+
+openApiGenerate {
+    generatorName = "jaxrs-spec"
+    inputSpec = "${project.rootDir}/src/main/resources/openapi.yml".toString()
+    outputDir = generatedSourcesDir
+    apiPackage = "br.com.iagoomes.api"
+    modelPackage = "br.com.iagoomes.model"
+
+    configOptions = [
+            interfaceOnly: "true",
+            returnResponse: "true",
+            useTags: "true",
+            dateLibrary: "java8",
+            useJakartaEe: "true",
+            generatePom: "false"
+    ]
+
+    additionalProperties = [
+            hideGenerationTimestamp: "true",
+            additionalModelTypeAnnotations: "@io.quarkus.runtime.annotations.RegisterForReflection"
+    ]
+}
+
+// Adiciona o código gerado ao sourceSets
+sourceSets {
+    main {
+        java {
+            srcDir "$generatedSourcesDir/src/main/java"
+        }
+    }
+}
+
+// Garante que a geração ocorra antes da compilação
+tasks.named('compileJava') {
+    dependsOn tasks.named('openApiGenerate')
 }
