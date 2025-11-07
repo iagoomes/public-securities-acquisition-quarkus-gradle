@@ -10,26 +10,109 @@ repositories {
 }
 
 dependencies {
+    // ========== PLATAFORMA QUARKUS ==========
+    // BOM (Bill of Materials) do Quarkus - gerencia versões de todas as dependências Quarkus
+    // OBRIGATÓRIO: Deve ser a primeira dependência, garante compatibilidade entre extensões
     implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
+
+    // ========== REST / HTTP ==========
+    // Quarkus REST (novo, baseado em RESTEasy Reactive)
+    // Fornece: JAX-RS endpoints, suporte a REST APIs
+    // Substitui: RESTEasy clássico (mais rápido e menos memória)
     implementation 'io.quarkus:quarkus-rest'
+
+    // Integração Jackson com Quarkus REST
+    // Fornece: Serialização/Deserialização JSON automática
+    // DEPENDE DE: quarkus-rest (não funciona sem ele)
+    // Usado por: Endpoints REST que recebem/retornam JSON
     implementation 'io.quarkus:quarkus-rest-jackson'
-    implementation 'io.quarkus:quarkus-messaging-rabbitmq'
+
+    // ========== BANCO DE DADOS ==========
+    // Hibernate ORM com Panache (camada simplificada de persistência)
+    // Fornece: JPA, entidades, repositórios com sintaxe simplificada
+    // Panache elimina código boilerplate (sem @Repository, @Entity tem métodos estáticos)
+    // DEPENDE DE: quarkus-jdbc-* (precisa de um driver JDBC)
     implementation 'io.quarkus:quarkus-hibernate-orm-panache'
-    implementation 'io.quarkus:quarkus-smallrye-health'
+
+    // Driver JDBC para PostgreSQL
+    // Fornece: Conexão com banco de dados PostgreSQL
+    // REQUERIDO POR: quarkus-hibernate-orm-panache
+    // Alternativas: quarkus-jdbc-mysql, quarkus-jdbc-h2, etc.
     implementation 'io.quarkus:quarkus-jdbc-postgresql'
+
+    // ========== DEPENDENCY INJECTION ==========
+    // CDI (Contexts and Dependency Injection) - Container de injeção de dependências
+    // Fornece: @Inject, @ApplicationScoped, @RequestScoped, etc.
+    // CORE do Quarkus: Praticamente toda aplicação precisa (já vem implícito em outras deps)
+    // Explicitamente incluído para garantia e clareza
     implementation 'io.quarkus:quarkus-arc'
+
+    // ========== OBSERVABILIDADE ==========
+    // Health checks (liveness e readiness probes)
+    // Fornece: /q/health endpoint para Kubernetes/Docker
+    // Monitora: Banco de dados, RabbitMQ, etc. automaticamente
+    // Independente de outras dependências
+    implementation 'io.quarkus:quarkus-smallrye-health'
+
+    // Micrometer - Métricas e observabilidade
+    // Fornece: Coleta de métricas (CPU, memória, requests, etc.)
+    // Exporta para: Prometheus, Grafana, etc.
+    // Endpoint: /q/metrics
     implementation 'io.quarkus:quarkus-micrometer'
 
-    // OpenAPI / Swagger UI
+    // ========== MENSAGERIA ==========
+    // SmallRye Reactive Messaging com RabbitMQ
+    // Fornece: @Incoming, @Outgoing, @Channel, Emitter
+    // Permite: Enviar e receber mensagens do RabbitMQ
+    // Suporta: Programação reativa (Mutiny) e bloqueante
+    // DEPENDE DE: quarkus-rest-jackson (para serialização de mensagens)
+    implementation 'io.quarkus:quarkus-messaging-rabbitmq'
+
+    // ========== OPENAPI / SWAGGER ==========
+    // SmallRye OpenAPI - Gera documentação OpenAPI 3.0 automaticamente
+    // Fornece: /q/swagger-ui (interface gráfica) e /q/openapi (spec JSON/YAML)
+    // Escaneia: Endpoints REST e gera documentação automática
+    // DEPENDE DE: quarkus-rest (precisa de endpoints para documentar)
     implementation 'io.quarkus:quarkus-smallrye-openapi'
+
+    // Swagger Annotations v3 - Anotações para documentar APIs
+    // Fornece: @Operation, @APIResponse, @Schema, etc.
+    // Usado em: Classes geradas pelo OpenAPI Generator
+    // REQUERIDO POR: Código gerado com useSwaggerAnnotations ou generateMicroprofileOpenAPIAnnotations
     implementation 'io.swagger.core.v3:swagger-annotations:2.2.26'
+
+    // Jackson Databind Nullable - Suporte para JsonNullable<T>
+    // Fornece: JsonNullable wrapper para distinguir null de "não enviado"
+    // Útil em: APIs REST com PATCH (atualização parcial)
+    // Gerado quando: openApiNullable=true no OpenAPI Generator
+    // DEPENDE DE: quarkus-rest-jackson
     implementation 'org.openapitools:jackson-databind-nullable:0.2.6'
+
+    // Jakarta Validation API - Bean Validation
+    // Fornece: @NotNull, @NotBlank, @Size, @Min, @Max, @Pattern, etc.
+    // Usado em: DTOs gerados pelo OpenAPI Generator e validação de requests
+    // DEPENDE DE: quarkus-hibernate-validator (implementação, já vem com Quarkus)
     implementation 'jakarta.validation:jakarta.validation-api:3.1.0'
 
-    // MapStruct
+    // ========== MAPEAMENTO DE OBJETOS ==========
+    // MapStruct Processor - Gerador de código em tempo de compilação
+    // Fornece: Gera implementações de interfaces de mapeamento
+    // Roda em: Annotation processing (compile time)
+    // NECESSÁRIO: annotationProcessor, não implementation
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+
+    // MapStruct - API e anotações
+    // Fornece: @Mapper, @Mapping, @MappingTarget, etc.
+    // Usado para: Converter entre DTOs e Entidades
+    // REQUER: mapstruct-processor (para gerar código)
+    // INTEGRA COM: Código gerado do OpenAPI Generator
     implementation 'org.mapstruct:mapstruct:1.6.3'
 
+    // ========== TESTES ==========
+    // JUnit 5 com integração Quarkus
+    // Fornece: @QuarkusTest, injeção de dependências em testes
+    // Inclui: JUnit 5, Mockito, RestAssured
+    // Permite: Testar aplicação com contexto Quarkus completo
     testImplementation 'io.quarkus:quarkus-junit5'
 }
 
