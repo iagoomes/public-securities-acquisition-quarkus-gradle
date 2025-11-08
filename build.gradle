@@ -75,12 +75,6 @@ dependencies {
     // DEPENDE DE: quarkus-rest (precisa de endpoints para documentar)
     implementation 'io.quarkus:quarkus-smallrye-openapi'
 
-    // Swagger Annotations v3 - Anotações para documentar APIs
-    // Fornece: @Operation, @APIResponse, @Schema, etc.
-    // Usado em: Classes geradas pelo OpenAPI Generator
-    // REQUERIDO POR: Código gerado com useSwaggerAnnotations ou generateMicroprofileOpenAPIAnnotations
-    implementation 'io.swagger.core.v3:swagger-annotations:2.2.26'
-
     // Jackson Databind Nullable - Suporte para JsonNullable<T>
     // Fornece: JsonNullable wrapper para distinguir null de "não enviado"
     // Útil em: APIs REST com PATCH (atualização parcial)
@@ -93,6 +87,11 @@ dependencies {
     // Usado em: DTOs gerados pelo OpenAPI Generator e validação de requests
     // DEPENDE DE: quarkus-hibernate-validator (implementação, já vem com Quarkus)
     implementation 'jakarta.validation:jakarta.validation-api:3.1.0'
+
+    // Hibernate Validator - Implementação de Bean Validation
+    // Fornece: Motor de validação para as anotações da Jakarta Validation API
+    // INTEGRA COM: Quarkus REST para validação automática de requests/responses
+    implementation 'io.quarkus:quarkus-hibernate-validator'
 
     // ========== MAPEAMENTO DE OBJETOS ==========
     // MapStruct Processor - Gerador de código em tempo de compilação
@@ -107,6 +106,9 @@ dependencies {
     // REQUER: mapstruct-processor (para gerar código)
     // INTEGRA COM: Código gerado do OpenAPI Generator
     implementation 'org.mapstruct:mapstruct:1.6.3'
+
+    compileOnly 'org.projectlombok:lombok:1.18.36'
+    annotationProcessor 'org.projectlombok:lombok:1.18.36'
 
     // ========== TESTES ==========
     // JUnit 5 com integração Quarkus
@@ -157,10 +159,11 @@ openApiGenerate {
             dateLibrary: "java8",
             useJakartaEe: "true",
             generatePom: "false",
-            sourceFolder: "src/main/java",  // Define o caminho correto do source
-            useSwaggerAnnotations: "false",  // Disable deprecated Swagger 2.0 annotations
+            sourceFolder: "src/main/java",
+            useSwaggerAnnotations: "false",
+            useBeanValidation: "true",
             prependFormOrBodyParameters: "true",
-            generateMicroprofileOpenAPIAnnotations: "true",
+            useMicroProfileOpenAPIAnnotations: "true",
     ]
 
     additionalProperties = [

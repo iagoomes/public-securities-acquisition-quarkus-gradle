@@ -6,7 +6,6 @@ info:
   contact:
     name: Iago Gomes
     email: iagoomes@example.com
-
 tags:
   - name: Public Securities
     description: Operations related to public securities acquisition.
