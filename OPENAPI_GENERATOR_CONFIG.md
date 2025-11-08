@@ -127,12 +127,12 @@ additionalProperties = [
 |-------|------|--------|-----------|
 | `library` | String | - | Usar `quarkus` para template específico |
 | `useMutinyForAsync` | Boolean | `false` | Usa Smallrye Mutiny para async (requer `library=quarkus`) |
-| `generateMicroprofileOpenAPIAnnotations` | Boolean | `false` | Gera anotações MicroProfile OpenAPI (requer `library=quarkus`) |
+| `useMicroProfileOpenAPIAnnotations` | Boolean | `false` | Gera anotações MicroProfile OpenAPI (requer `library=quarkus`) |
 | `returnResteasyRestResponse` | Boolean | `false` | Retorna `RestResponse` do RESTEasy Reactive |
 
 **Importante:**
 - Para usar opções específicas do Quarkus, configure `library: "quarkus"` no `configOptions`
-- `generateMicroprofileOpenAPIAnnotations` adiciona `@Operation`, `@APIResponse`, etc. do MicroProfile
+- `useMicroProfileOpenAPIAnnotations` adiciona `@Operation`, `@APIResponse`, etc. do MicroProfile
 - Não combine `returnResteasyRestResponse` com `returnResponse`
 
 ---
@@ -154,7 +154,7 @@ additionalProperties = [
 | Opção | Tipo | Padrão | Descrição | Recomendação Quarkus |
 |-------|------|--------|-----------|----------------------|
 | `useSwaggerAnnotations` | Boolean | `true` | Gera anotações Swagger 2.0 (`@Api`, `@ApiOperation`) | ❌ **false** - Swagger 2.0 está deprecado |
-| `generateMicroprofileOpenAPIAnnotations` | Boolean | `false` | Gera anotações OpenAPI 3 do MicroProfile | ✅ **true** se usar `library=quarkus` |
+| `useMicroProfileOpenAPIAnnotations` | Boolean | `false` | Gera anotações OpenAPI 3 do MicroProfile | ✅ **true** se usar `library=quarkus` |
 | `openApiSpecFileLocation` | String | `src/main/openapi` | Onde copiar o arquivo spec no output | Configure conforme preferência |
 
 **Importante:**
@@ -220,6 +220,65 @@ tasks.named('compileJava') {
 }
 ```
 
+### Configuração Avançada (Com MicroProfile OpenAPI Annotations)
+
+```gradle
+// OpenAPI Generator configuration
+def generatedSourcesDir = "${layout.buildDirectory.get()}/generated/openapi"
+
+openApiGenerate {
+    generatorName = "jaxrs-spec"
+    inputSpec = "${project.rootDir}/src/main/resources/openapi.yml".toString()
+    outputDir = generatedSourcesDir
+    apiPackage = "br.com.iagoomes.api"
+    modelPackage = "br.com.iagoomes.model"
+    invokerPackage = "br.com.iagoomes.invoker"
+
+    configOptions = [
+            library: "quarkus",
+            interfaceOnly: "true",
+            returnResponse: "true",
+            useTags: "true",
+            dateLibrary: "java8",
+            useJakartaEe: "true",
+            generatePom: "false",
+            sourceFolder: "src/main/java",
+            useSwaggerAnnotations: "false",
+            useBeanValidation: "true",
+            prependFormOrBodyParameters: "true",
+            useMicroProfileOpenAPIAnnotations: "true",
+    ]
+
+    additionalProperties = [
+            hideGenerationTimestamp: "true",
+            additionalModelTypeAnnotations: "@io.quarkus.runtime.annotations.RegisterForReflection"
+    ]
+}
+
+// Adiciona o código gerado ao sourceSets
+sourceSets {
+    main {
+        java {
+            srcDir "$generatedSourcesDir/src/main/java"
+        }
+    }
+}
+
+// Garante que a geração ocorra antes de processar os sources
+tasks.named('compileJava') {
+    dependsOn tasks.named('openApiGenerate')
+}
+
+tasks.named('processResources') {
+    dependsOn tasks.named('openApiGenerate')
+}
+```
+
+**Importante:**
+- `library: "quarkus"` é **OBRIGATÓRIO** para que `useMicroProfileOpenAPIAnnotations` funcione
+- Com essa configuração, o código gerado terá anotações como `@org.eclipse.microprofile.openapi.annotations.Operation`, `@org.eclipse.microprofile.openapi.annotations.tags.Tag`, etc.
+- As tags definidas no `openapi.yml` serão automaticamente aplicadas aos endpoints
+
 ### Configuração Avançada (Reativo com Mutiny)
 
 ```gradle
@@ -236,7 +295,7 @@ openApiGenerate {
         // Quarkus específico
         library: "quarkus",                              // ✅ Template Quarkus
         useMutinyForAsync: "true",                       // ✅ Mutiny (reativo)
-        generateMicroprofileOpenAPIAnnotations: "true",  // ✅ OpenAPI 3 annotations
+        useMicroProfileOpenAPIAnnotations: "true",       // ✅ OpenAPI 3 annotations
 
         // Estrutura
         interfaceOnly: "true",
@@ -426,7 +485,7 @@ configOptions = [
     // Quarkus
     library: "String", // quarkus
     useMutinyForAsync: "Boolean",
-    generateMicroprofileOpenAPIAnnotations: "Boolean",
+    useMicroProfileOpenAPIAnnotations: "Boolean",
     returnResteasyRestResponse: "Boolean",
 
     // Build
